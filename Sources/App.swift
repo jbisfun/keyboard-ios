@@ -23,11 +23,16 @@ final class Router {
 /// the launcher presents.
 public struct KeyboardRoot: View {
     @State private var router = Router()
+    private let openURL: URL?
 
-    public init() {}
+    /// `openURL`: a fossify-keyboard:// link from the keyboard extension, when the launcher opens
+    /// the app for it (the standalone app gets it through onOpenURL).
+    public init(openURL: URL? = nil) {
+        self.openURL = openURL
+    }
 
     public var body: some View {
-        RootView()
+        RootView(initialURL: openURL)
             .environment(router)
             .environment(Config.shared)
             .environment(ClipsStore.shared)
@@ -36,6 +41,7 @@ public struct KeyboardRoot: View {
 }
 
 struct RootView: View {
+    var initialURL: URL?
     @Environment(Router.self) private var router
     @Environment(\.scenePhase) private var phase
 
@@ -59,14 +65,8 @@ struct RootView: View {
         }
         .toast($router.toast)
         // fossify-keyboard://settings and ://clipboard, opened by the keyboard extension's buttons.
-        .onOpenURL { url in
-            guard url.scheme == KeyboardRoot.urlScheme else { return }
-            switch url.host {
-            case "settings": router.path = [.settings]
-            case "clipboard": router.path = [.manageClipboardItems]
-            default: break
-            }
-        }
+        .onOpenURL(perform: open)
+        .onAppear { if let initialURL { open(initialURL) } }
         .onChange(of: phase) {
             if phase == .active {
                 Config.shared.reload()
@@ -77,8 +77,19 @@ struct RootView: View {
     }
 }
 
+extension RootView {
+    private func open(_ url: URL) {
+        guard url.scheme == KeyboardRoot.urlScheme else { return }
+        switch url.host {
+        case "settings": router.path = [.settings]
+        case "clipboard": router.path = [.manageClipboardItems]
+        default: break
+        }
+    }
+}
+
 extension KeyboardRoot {
-    nonisolated static let urlScheme = "fossify-keyboard"
+    public nonisolated static let urlScheme = "fossify-keyboard"
 }
 
 /// Opens the containing app from the keyboard extension (keyboards have no extensionContext.open).
