@@ -9,9 +9,10 @@ import Observation
 final class Config {
     static let shared = Config()
 
-    /// App group of the app and its keyboard extension. Without the entitlement (inside the launcher)
-    /// this is simply a separate preferences domain.
-    nonisolated static let suiteName = "group.org.fossify.keyboard.ios"
+    /// App group of the app and its keyboard extension, as entitled after re-signing (Jimpactor
+    /// registers `group.org.fossify.keyboard.ios.<TEAMID>`, see FossifyCommons.AppGroup). Without
+    /// the entitlement this is simply a separate preferences domain.
+    nonisolated static let suiteName = AppGroup.resolve("group.org.fossify.keyboard.ios") ?? "group.org.fossify.keyboard.ios"
 
     @ObservationIgnored let d = UserDefaults(suiteName: Config.suiteName) ?? .standard
 
