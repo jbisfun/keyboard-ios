@@ -1,0 +1,90 @@
+# Fossify Keyboard for iOS. Build with `idl build -c release` (see README.md).
+toolchain:
+  sdk_bundle: ~/.swiftpm/swift-sdks/darwin.artifactbundle
+  swiftly_bin: ~/.local/share/swiftly/bin
+  swiftc: swiftc
+  ldid: ldid
+  actool: idl-actool
+
+targets:
+  - name: FossifyKeyboard
+    bundle_id: org.fossify.keyboard.ios
+    version: "1.9.1"
+    build_number: "1"
+    min_ios: "17.0"
+    device_family: "1,2"
+    link: [KeyboardKit, FossifyCommons]
+    embed: [KeyboardExtension]
+    sources: [App]
+    resources: [Resources/Assets.xcassets]
+    frameworks: [SwiftUI, UIKit, Foundation, AudioToolbox, CoreText, UniformTypeIdentifiers]
+    swift_version: "5.0"
+    info:
+      CFBundleDisplayName: Keyboard
+      UIApplicationSceneManifest:
+        UIApplicationSupportsMultipleScenes: false
+      UISupportedInterfaceOrientations:
+        - UIInterfaceOrientationPortrait
+        - UIInterfaceOrientationLandscapeLeft
+        - UIInterfaceOrientationLandscapeRight
+      UISupportedInterfaceOrientations~ipad:
+        - UIInterfaceOrientationPortrait
+        - UIInterfaceOrientationPortraitUpsideDown
+        - UIInterfaceOrientationLandscapeLeft
+        - UIInterfaceOrientationLandscapeRight
+      # Opened by the keyboard's settings / manage clipboard buttons.
+      CFBundleURLTypes:
+        - CFBundleURLName: org.fossify.keyboard.ios
+          CFBundleURLSchemes: [fossify-keyboard]
+    # Settings, pinned clips and colors shared with the keyboard extension.
+    entitlements:
+      com.apple.security.application-groups: [group.org.fossify.keyboard.ios]
+    configurations:
+      debug:
+        entitlements:
+          get-task-allow: true
+
+  # The system keyboard (Settings > General > Keyboard > Keyboards > Add New Keyboard).
+  - name: KeyboardExtension
+    type: appex
+    bundle_id: org.fossify.keyboard.ios.extension
+    version: "1.9.1"
+    build_number: "1"
+    min_ios: "17.0"
+    device_family: "1,2"
+    link: [KeyboardKit, FossifyCommons]
+    sources: [Extension]
+    frameworks: [SwiftUI, UIKit, Foundation, AudioToolbox, CoreText, UniformTypeIdentifiers]
+    ldflags: [-e, _NSExtensionMain]
+    swift_version: "5.0"
+    info:
+      CFBundleDisplayName: Fossify Keyboard
+      NSExtension:
+        NSExtensionPointIdentifier: com.apple.keyboard-service
+        NSExtensionPrincipalClass: KeyboardViewController
+        NSExtensionAttributes:
+          IsASCIICapable: false
+          PrefersRightToLeft: false
+          PrimaryLanguage: mul
+          # Full access: clipboard, keypress sounds and haptics, the shared app group.
+          RequestsOpenAccess: true
+    entitlements:
+      com.apple.security.application-groups: [group.org.fossify.keyboard.ios]
+
+  # Everything but the entry points; also linked by the launcher (fossify-ios/launcher-ios).
+  - name: KeyboardKit
+    type: static
+    min_ios: "17.0"
+    link: [FossifyCommons]
+    sources: [Sources]
+    frameworks: [SwiftUI, UIKit, Foundation, AudioToolbox, CoreText, UniformTypeIdentifiers]
+    swift_version: "5.0"
+
+  # Shared core (fossify-ios/commons-ios), compiled into the app as a static Swift module.
+  - name: FossifyCommons
+    type: static
+    dir: ../commons-ios
+    min_ios: "17.0"
+    sources: [Sources]
+    frameworks: [SwiftUI, UIKit, Foundation]
+    swift_version: "5.0"
